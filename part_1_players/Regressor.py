@@ -1,22 +1,30 @@
+from numpy.random import seed
+s = 1
+seed(s)
+from tensorflow import set_random_seed
+set_random_seed(s)
 import pandas as pd
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn import datasets, linear_model
-from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-import numpy as np
 from collections import defaultdict
 import math
 
-class LinearRegressor:
+class Regressor:
 
     def __init__(self, continuous=True):
         self.final_continuous = pd.read_csv('finalData.csv')
         self.final_discrete = pd.read_csv('discreteData.csv')
         self.final_beast = pd.read_csv('superbeastfire.csv')
         # self.data = self.final_continuous if continuous else self.final_discrete
-        self.data = final_beast
+        self.data = self.final_beast
         self.loadData()
 
     def loadData(self):
@@ -124,10 +132,34 @@ class LinearRegressor:
                     yTrain[position].append(self.draftValues[(row['name'], row['year'])])
         return X, Y, xTrain, yTrain, xTest, yTest, names
 
+    def base_model():
+        model = Sequential()
+        model.add(Dense(numFeatures, input_dim=numFeatures, kernel_initializer='normal', activation='relu'))
+        model.add(Dense(1, kernel_initializer='normal'))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+        return model
+
+    def deep_model():
+        model = Sequential()
+        model.add(Dense(numFeatures, input_dim=numFeatures, kernel_initializer='normal', activation='relu'))
+        model.add(Dense(numFeatures // 2, kernel_initializer='normal'))
+        model.add(Dense(1, kernel_initializer='normal'))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+        return model
+
+    def wide_model():
+        model = Sequential()
+        model.add(Dense(numFeatures, input_dim=numFeatures, kernel_initializer='normal', activation='relu'))
+        model.add(Dense(numFeatures * 2, kernel_initializer='normal'))
+        model.add(Dense(numFeatures * 4, kernel_initializer='normal'))
+        model.add(Dense(1, kernel_initializer='normal', activation='linear'))
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
+        # model.output_shape
+        # model.summary()
+        return model
+
     def fit_and_predict(self, TEST_YEAR, regularization=True):
         X, Y, xTrain, yTrain, xTest, yTest, names = self.build_data_arrays(TEST_YEAR)
-        seed = 7
-        np.random.seed(seed)
         if regularization:
             predictor = linear_model.RidgeCV(alphas=[0.1, 1.0, 10], fit_intercept=True, normalize=self.shouldNormalize)
         else:
@@ -145,6 +177,22 @@ class LinearRegressor:
                 scores[p] = (mean_squared_error(np.array(yTest[p]), np.array(prediction)),
                              r2_score(np.array(yTest[p]), np.array(prediction)))
                 relativeError[p] = self.get_relative_error(output[p], TEST_YEAR)
+        return output
+
+    def fit_and_predict_nn(self, TEST_YEAR):
+        X, Y, xTrain, yTrain, xTest, yTest, names = self.build_data_arrays(TEST_YEAR)
+        predictor = KerasRegressor(build_fn=wide_model, nb_epoch=1000, batch_size=5, verbose=0)
+        scores = {}
+        output = {}
+        relativeError = {} 
+        for p in positions:
+            if len(xTrain[p]) > 1 and len(xTest[p]) > 1:
+                predictor.fit(np.array(xTrain[p]), np.array(yTrain[p]))
+                prediction = predictor.predict(np.array(xTest[p]))
+                output[p] = pd.DataFrame(zip(names[p], prediction), columns = ['name', 'value']).sort_values(by=['value'], ascending=False)
+                scores[p] = (mean_squared_error(np.array(yTest[p]), np.array(prediction)), 
+                             r2_score(np.array(yTest[p]), np.array(prediction)))
+                relativeError[p] = get_relative_error(output[p], TEST_YEAR)
         return output
 
 

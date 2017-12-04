@@ -14,7 +14,9 @@ class LinearRegressor:
     def __init__(self, continuous=True):
         self.final_continuous = pd.read_csv('finalData.csv')
         self.final_discrete = pd.read_csv('discreteData.csv')
-        self.data = self.final_continuous if continuous else self.final_discrete
+        self.final_beast = pd.read_csv('superbeastfire.csv')
+        # self.data = self.final_continuous if continuous else self.final_discrete
+        self.data = final_beast
         self.loadData()
 
     def loadData(self):
@@ -39,7 +41,9 @@ class LinearRegressor:
                     'totalTacklesQ1','totalTacklesQ2','totalTacklesQ3','totalTacklesQ4','sacksNone','sacksQ1','sacksQ2','sacksQ3','sacksQ4','intsNone','intsQ1','intsQ2','intsQ3',
                     'intsQ4','intTDsNone','intTDsQ1','intTDsQ2','intTDsQ3','intTDsQ4','passDefNone','passDefQ1','passDefQ2','passDefQ3','passDefQ4','fumblesNone','fumblesQ1',
                     'fumblesQ2','fumblesQ3','fumblesQ4','fumblesForcedNone','fumblesForcedQ1','fumblesForcedQ2','fumblesForcedQ3','fumblesForcedQ4']
-        self.features = featuresStandard if self.data.equals(self.final_continuous)  else featuresDiscrete
+        featuresBeast = featuresStandard + featuresDiscrete
+        # self.features = featuresStandard if self.data.equals(self.final_continuous)  else featuresDiscrete
+        self.features = featuresBeast
         self.shouldNormalize = True if self.features == featuresStandard else False
         self.draftValues, self.draftPositions = self.get_player_draft_info()
         self.positions = self.get_positions()

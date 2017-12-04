@@ -1,3 +1,3 @@
-# Neural Net Class (public API to get playr scores)
+# Neural Net Class (public API to get player scores)
 
 class NeuralNet:

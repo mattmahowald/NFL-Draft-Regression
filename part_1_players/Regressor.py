@@ -151,7 +151,6 @@ class Regressor:
         model = Sequential()
         model.add(Dense(numFeatures, input_dim=numFeatures, kernel_initializer='normal', activation='relu'))
         model.add(Dense(numFeatures * 2, kernel_initializer='normal'))
-        model.add(Dense(numFeatures * 4, kernel_initializer='normal'))
         model.add(Dense(1, kernel_initializer='normal', activation='linear'))
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mae'])
         # model.output_shape
